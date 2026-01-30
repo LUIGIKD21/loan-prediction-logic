@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Log | Risk Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"
+          rel="stylesheet">
+</head>
+<body class="bg-slate-50 min-h-screen p-8 font-['Plus_Jakarta_Sans']">
+<div class="max-w-6xl mx-auto space-y-6">
+    <header class="flex justify-between items-center border-b pb-4">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-900">Decision Audit Log</h1>
+            <p class="text-sm text-slate-500">PostgreSQL Live Transaction History</p>
+        </div>
+        <a href="/"
+           class="bg-slate-900 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-black transition">
+            ← Back to Engine
+        </a>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <p class="text-xs font-bold text-slate-400 uppercase">Total Logs</p>
+            <p class="text-2xl font-bold text-slate-900">{{ records|length }}</p>
+        </div>
+    </div>
+
+<div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+<table class="w-full text-left border-collapse">
+    <thead class="bg-slate-50/50 border-b border-slate-200">
+    <tr>
+        <th class="p-4 text-xs font-bold text-slate-500 uppercase">Timestamp</th>
+        <th class="p-4 text-xs font-bold text-slate-500 uppercase">Applicant Data</th>
+        <th class="p-4 text-xs font-bold text-slate-500 uppercase">Loan & DTI</th>
+        <th class="p-4 text-xs font-bold text-slate-500 uppercase">Credit</th>
+        <th class="p-4 text-xs font-bold text-slate-500 uppercase">AI Decision</th>
+        <th class="p-4 text-xs font-bold text-slate-500 uppercase text-right">Confidence</th>
+    </tr>
+    </thead>
+<tbody class="divide-y divide-slate-100">
+{% for record in records %}
+<tr class="hover:bg-slate-50/80 transition-colors">
+    <td class="p-4 text-sm text-slate-500">
+        {{ record.created_at.strftime('%m/%d %H:%M:%S') }}
+    </td>
+<td class="p-4">
+    <div class="text-sm font-semibold text-slate-900">Age {{ record.age }}</div>
+<div class="text-xs text-slate-500">${{ "{:,.0f}".format(record.income) }} / yr</div>
+</td>
+<td class="p-4">
+<div class="text-sm font-medium text-slate-700">${{ "{:,.0f}".format(record.loan_amount) }}</div>
+    <div class="text-[10px] font-mono text-slate-400 italic">DTI: {{ "%.3f"|format(record.dti) if record.dti else 'N/A'
+        }}
+    </div>
+</td>
+    <td class="p-4">
+                            <span class="px-2 py-1 rounded-md text-xs font-bold
+                                {{ 'bg-emerald-100 text-emerald-700' if record.credit_score >= 700
+                                   else 'bg-amber-100 text-amber-700' if record.credit_score >= 600
+                                   else 'bg-rose-100 text-rose-700' }}">
+                                {{ record.credit_score }}
+                            </span>
+    </td>
+    <td class="p-4">
+                            <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+                                {{ 'bg-emerald-500 text-white' if record.prediction == 'Eligible' else 'bg-rose-500 text-white' }}">
+                                {{ record.prediction }}
+                            </span>
+    </td>
+    <td class="p-4 text-right font-mono text-sm font-semibold text-slate-600">
+        {{ record.confidence }}%
+    </td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+    {% if not records %}
+    <div class="p-20 text-center">
+        <p class="text-slate-400">No transactions recorded yet. Run a check on the main page!</p>
+    </div>
+    {% endif %}
+</div>
+</div>
+</body>
+</html>

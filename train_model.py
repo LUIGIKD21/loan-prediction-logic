@@ -4,88 +4,77 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from joblib import dump
-import os
+from sqlalchemy import create_engine
 
+# --- SETTINGS & CONFIGURATION ---
+# Replace 'your_password' with your actual PostgreSQL password
+DB_PASSWORD = 'admin123'
+DB_URL = f'postgresql://postgres:{DB_PASSWORD}@localhost:5432/loan_db'
 
-# Define the features the model expects (must match frontend form inputs)
-FEATURES = ['Credit_Score', 'ApplicantIncome', 'LoanAmount', 'Gender']
-TARGET = 'Loan_Status'
-MODEL_FILENAME = 'loan_model.joblib'
-SCALER_FILENAME = 'scaler.joblib'
+FEATURES = ['age', 'years_employed', 'annual_income', 'credit_score',
+            'current_debt', 'loan_amount', 'debt_to_income_ratio',
+            'occupation_status', 'loan_intent']
+TARGET = 'loan_status'
 
-def create_dummy_data():
-    """
-    Creates a simple, small dataset
-    'Loan_Status': 1 = Approved, 0 = Rejected
-    """
-    np.random.seed(42)
-    data_size = 200
-
-    # Generate synthetic data
-    credit_scores = np.random.randint(550, 850, size=data_size)
-    incomes = np.random.randint(20000, 150000, size=data_size)
-    loan_amounts = np.random.randint(5000, 500000, size=data_size)
-    genders = np.random.choice(['Male', 'Female'], size=data_size)
-
-    # Simple logic for "Approval":
-    # Approved if Credit Score > 650 AND Loan Amount < (Income * 5)
-    loan_status = []
-    for i in range(data_size):
-        if credit_scores[i] > 650 and loan_amounts[i] < (incomes[i] * 5):
-            loan_status.append(1)
-        else:
-            loan_status.append(0)
-
-    data = {
-        'Credit_Score': credit_scores,
-        'ApplicantIncome': incomes,
-        'LoanAmount': loan_amounts,
-        'Gender': genders,
-        'Loan_Status': loan_status
-    }
-    return pd.DataFrame(data)
 
 def train_and_save_model():
-    """Trains the Random Forest model and saves the necessary objects."""
-    print("Starting Model Training for MVP...")
+    print("--- Starting ML Pipeline: PostgreSQL Integration ---")
 
-    # 1. Load Data
-    df = create_dummy_data()
+    # 1. Load the 2025 Dataset
+    try:
+        df = pd.read_csv('Loan_approval_data_2025.csv')
+        print(f"Successfully loaded {len(df)} rows of data.")
+    except FileNotFoundError:
+        print("ERROR: Loan_approval_data_2025.csv not found in folder.")
+        return
 
-    # 2. Preprocessing: Encode Gender (Male=1, Female=0)
-    df['Gender'] = df['Gender'].apply(lambda x: 1 if x == 'Male' else 0)
+    # 2. Seed to PostgreSQL (Data Governance Step)
+    # This proves you can move data between files and enterprise databases
+    try:
+        engine = create_engine(DB_URL)
+        df.to_sql('raw_training_data', engine, if_exists='replace', index=False)
+        print("SUCCESS: Raw training data seeded to PostgreSQL table 'raw_training_data'.")
+    except Exception as e:
+        print(f"WARNING: Database sync failed. (Check if Postgres is running) | Error: {e}")
 
-    # Separate features and target
-    X = df[FEATURES]
+    # 3. Preprocessing: Encoding Categories
+    # Converts 'Employed'/'Student' into 0s and 1s the model can understand
+    X = pd.get_dummies(df[FEATURES], columns=['occupation_status', 'loan_intent'])
     y = df[TARGET]
 
-    # 3. Scaling Numerical Features (Credit Score, Income, Loan Amount)
+    # Critical: Save the column order so app.py doesn't get confused
+    dump(list(X.columns), 'model_columns.joblib')
+
+    # 4. Preprocessing: Scaling Numbers
+    # Ensures 'Income' (large numbers) doesn't drown out 'DTI' (small numbers)
     scaler = StandardScaler()
-    numerical_cols = ['Credit_Score', 'ApplicantIncome', 'LoanAmount']
+    num_cols = ['age', 'years_employed', 'annual_income', 'credit_score',
+                'current_debt', 'loan_amount', 'debt_to_income_ratio']
+    X[num_cols] = scaler.fit_transform(X[num_cols])
 
-    # Fit the scaler on numerical columns
-    X_scaled_values = scaler.fit_transform(X[numerical_cols])
+    # 5. Training: Random Forest Classifier
+    # We use 200 trees and a depth of 12 for high accuracy without overfitting
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Recombine scaled data and the encoded gender feature for training
-    X_final = np.concatenate((X_scaled_values, X[['Gender']].values), axis=1)
+    model = RandomForestClassifier(
+        n_estimators=200,
+        max_depth=12,
+        min_samples_split=10,
+        random_state=42
+    )
 
-    # 4. Split Data
-    X_train, X_test, y_train, y_test = train_test_split(X_final, y, test_size=0.2, random_state=42)
-
-    # 5. Train Model (Random Forest Classifier)
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
+    print("Training the Random Forest model...")
     model.fit(X_train, y_train)
 
-    # 6. Evaluate
+    # 6. Evaluate & Save
     accuracy = model.score(X_test, y_test)
-    print(f"Model Accuracy: {accuracy * 100:.2f}%")
+    print(f"TRAINING COMPLETE. Model Accuracy: {accuracy * 100:.2f}%")
 
-    # 7. Save Model and Scaler (The MVP Deliverable)
-    dump(model, MODEL_FILENAME)
-    dump(scaler, SCALER_FILENAME)
+    # Save the 'brains' of the app
+    dump(model, 'loan_model.joblib')
+    dump(scaler, 'scaler.joblib')
+    print("Files saved: loan_model.joblib, scaler.joblib, model_columns.joblib")
 
-    print(f"\nSUCCESS: '{MODEL_FILENAME}' and '{SCALER_FILENAME}' have been created.")
-    print("You can now run 'app.py' to start the web server.")
 
 if __name__ == '__main__':
     train_and_save_model()

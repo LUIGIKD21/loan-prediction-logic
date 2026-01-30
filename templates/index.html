@@ -3,189 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Loan Eligibility Dashboard</title>
+    <title>Risk Terminal | Summer Associate Project</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: radial-gradient(circle at top left, #f8fafc, #f1f5f9);
-        }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        .animate-slide-up {
-            animation: slideUp 0.5s ease-out forwards;
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="bg-slate-50 min-h-screen p-8 font-['Plus_Jakarta_Sans']">
+<div class="max-w-4xl mx-auto space-y-6">
+    <header class="flex justify-between items-center border-b pb-4">
+        <h1 class="text-2xl font-bold text-slate-900">AI Eligibility Engine</h1>
+        <a href="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">View Audit Logs →</a>
+    </header>
 
-    <div class="w-full max-w-2xl">
-        <!-- Header -->
-        <div class="text-center mb-8 animate-slide-up">
-            <div class="inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-wider mb-4">
-                Powered by Machine Learning
-            </div>
-            <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight mb-2">Loan Predictor MVP</h1>
-            <p class="text-slate-500 max-w-md mx-auto">Enter applicant details below to receive an immediate AI-driven credit assessment.</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="md:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+            <form id="loanForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="number" id="age" placeholder="Age" class="p-3 bg-slate-50 border rounded-xl outline-none" required>
+                <input type="number" id="income" placeholder="Annual Income ($)" class="p-3 bg-slate-50 border rounded-xl outline-none" required>
+                <input type="number" id="loan_amount" placeholder="Loan Amount ($)" class="p-3 bg-blue-50 border border-blue-100 rounded-xl outline-none font-bold" required>
+                <input type="number" id="credit_score" placeholder="Credit Score (300-850)" class="p-3 bg-slate-50 border rounded-xl outline-none" required>
+                <input type="number" id="current_debt" placeholder="Current Debt ($)" class="p-3 bg-slate-50 border rounded-xl outline-none" required>
+                <input type="number" step="0.1" id="years_employed" placeholder="Years Employed" class="p-3 bg-slate-50 border rounded-xl outline-none" required>
+                <select id="occupation" class="p-3 bg-slate-50 border rounded-xl outline-none md:col-span-2">
+                    <option value="Employed">Employed</option>
+                    <option value="Student">Student</option>
+                    <option value="Unemployed">Unemployed</option>
+                </select>
+                <button type="submit" id="submitBtn" class="md:col-span-2 bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all">
+                    Run Eligibility Check
+                </button>
+            </form>
         </div>
 
-        <div class="glass-card rounded-3xl shadow-2xl overflow-hidden animate-slide-up" style="animation-delay: 0.1s;">
-            <div class="p-8 sm:p-12">
-                <form id="prediction-form" class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Credit Score -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-slate-700">Credit Score (FICO)</label>
-                            <input type="number" name="credit_score" required min="300" max="850" placeholder="e.g. 720"
-                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all">
-                        </div>
-
-                        <!-- Income -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-slate-700">Annual Income ($)</label>
-                            <input type="number" name="income" required min="0" placeholder="e.g. 85000"
-                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all">
-                        </div>
-
-                        <!-- Loan Amount -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-slate-700">Loan Amount ($)</label>
-                            <input type="number" name="loan_amount" required min="0" placeholder="e.g. 250000"
-                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all">
-                        </div>
-
-                        <!-- Gender -->
-                        <div class="space-y-2">
-                            <label class="text-sm font-semibold text-slate-700">Gender</label>
-                            <select name="gender" required
-                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all appearance-none bg-white">
-                                <option value="" disabled selected>Select gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <button type="submit" id="submit-btn"
-                        class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl shadow-lg shadow-slate-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
-                        Get Prediction
-                    </button>
-                </form>
-
-                <!-- Results Section -->
-                <div id="results-box" class="mt-10 hidden">
-                    <div class="h-px bg-slate-100 mb-8"></div>
-                    <div id="result-card" class="p-6 rounded-2xl text-center transition-all">
-                        <h3 id="result-status" class="text-2xl font-bold mb-1"></h3>
-                        <div id="confidence-bar-container" class="mt-4 w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                            <div id="confidence-bar" class="h-full transition-all duration-1000" style="width: 0%"></div>
-                        </div>
-                        <p id="result-meta" class="mt-3 text-sm font-medium"></p>
-                    </div>
+        <div id="resultsBox" class="hidden">
+            <div id="resultCard" class="h-full rounded-3xl p-8 border flex flex-col items-center justify-center text-center space-y-4 shadow-xl">
+                <p class="text-xs font-bold uppercase opacity-60">System Decision</p>
+                <h2 id="resultStatus" class="text-3xl font-bold"></h2>
+                <div class="w-full bg-white/30 rounded-full h-2">
+                    <div id="confBar" class="h-full rounded-full transition-all duration-1000 bg-white"></div>
                 </div>
-
-                <!-- Error Message -->
-                <div id="error-box" class="mt-6 hidden bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 text-center">
-                </div>
+                <p class="text-sm font-medium">Confidence: <span id="confText"></span></p>
+                <p class="text-[10px] opacity-70 italic">Transaction saved to PostgreSQL</p>
             </div>
         </div>
-
-        <p class="text-center mt-8 text-slate-400 text-xs">
-            Admin Note: The UI is communicating with the local Flask server on port 5000.
-        </p>
     </div>
+</div>
 
-    <script>
-        const form = document.getElementById('prediction-form');
-        const submitBtn = document.getElementById('submit-btn');
-        const resultsBox = document.getElementById('results-box');
-        const resultCard = document.getElementById('result-card');
-        const resultStatus = document.getElementById('result-status');
-        const resultMeta = document.getElementById('result-meta');
-        const confidenceBar = document.getElementById('confidence-bar');
-        const errorBox = document.getElementById('error-box');
+<script>
+    document.getElementById('loanForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "Analyzing Risk...";
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        const income = parseFloat(document.getElementById('income').value) || 1;
+        const currentDebt = parseFloat(document.getElementById('current_debt').value) || 0;
+        const requestedLoan = parseFloat(document.getElementById('loan_amount').value) || 0;
+        const proFormaDTI = (currentDebt + requestedLoan) / income;
 
-            // Reset UI
-            errorBox.classList.add('hidden');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = `
-                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Analysing...
-            `;
+        const payload = {
+            age: document.getElementById('age').value,
+            income: document.getElementById('income').value,
+            loan_amount: document.getElementById('loan_amount').value,
+            credit_score: document.getElementById('credit_score').value,
+            years_employed: document.getElementById('years_employed').value,
+            current_debt: document.getElementById('current_debt').value,
+            dti: proFormaDTI.toFixed(3),
+            occupation: document.getElementById('occupation').value,
+            intent: "Personal"
+        };
 
-            const formData = new FormData(form);
-            const payload = {
-                credit_score: parseInt(formData.get('credit_score')),
-                income: parseInt(formData.get('income')),
-                loan_amount: parseInt(formData.get('loan_amount')),
-                gender: formData.get('gender')
-            };
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
 
-            try {
-                // Fetch to the Flask endpoint
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+            if (data.status === 'success') {
+                const box = document.getElementById('resultsBox');
+                const card = document.getElementById('resultCard');
+                box.classList.remove('hidden');
 
-                if (!response.ok) throw new Error('API Error: Check if Flask server is running.');
+                const isEligible = data.prediction === 'Eligible';
+                document.getElementById('resultStatus').innerText = data.prediction.toUpperCase();
 
-                const data = await response.json();
+                card.className = isEligible
+                        ? 'h-full rounded-3xl p-8 border bg-emerald-500 text-white shadow-xl'
+                        : 'h-full rounded-3xl p-8 border bg-rose-500 text-white shadow-xl';
 
-                if (data.status === 'success') {
-                    showResult(data.prediction, data.confidence);
-                } else {
-                    throw new Error(data.message || 'Prediction failed');
-                }
-            } catch (err) {
-                errorBox.innerText = err.message;
-                errorBox.classList.remove('hidden');
-                resultsBox.classList.add('hidden');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Get Prediction';
+                document.getElementById('confText').innerText = data.confidence + '%';
+                // Trigger animation
+                setTimeout(() => {
+                    document.getElementById('confBar').style.width = data.confidence + '%';
+                }, 100);
+            } else {
+                alert("Server Error: " + data.message);
             }
-        });
-
-        function showResult(prediction, confidence) {
-            resultsBox.classList.remove('hidden');
-
-            const isApproved = prediction === 'Approved';
-
-            // UI Styling based on result
-            resultCard.className = isApproved
-                ? 'p-6 rounded-2xl text-center bg-emerald-50 border border-emerald-100'
-                : 'p-6 rounded-2xl text-center bg-rose-50 border border-rose-100';
-
-            resultStatus.className = isApproved ? 'text-2xl font-bold mb-1 text-emerald-700' : 'text-2xl font-bold mb-1 text-rose-700';
-            resultStatus.innerText = isApproved ? '🎉 Loan Likely Approved' : '🛑 Loan Likely Rejected';
-
-            resultMeta.className = isApproved ? 'mt-3 text-sm font-medium text-emerald-600' : 'mt-3 text-sm font-medium text-rose-600';
-            resultMeta.innerText = `AI confidence score: ${confidence}%`;
-
-            confidenceBar.className = isApproved ? 'h-full bg-emerald-500 transition-all duration-1000' : 'h-full bg-rose-500 transition-all duration-1000';
-
-            // Animate bar
-            confidenceBar.style.width = '0%';
-            setTimeout(() => {
-                confidenceBar.style.width = `${confidence}%`;
-            }, 50);
+        } catch (err) {
+            alert("Connection Error: Is the app.py server running?");
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "Run Eligibility Check";
         }
-    </script>
+    });
+</script>
 </body>
 </html>

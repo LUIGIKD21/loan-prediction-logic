@@ -1,123 +1,138 @@
 from flask import Flask, render_template, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from joblib import load
+from datetime import datetime
 import pandas as pd
 import numpy as np
 import os
 
 app = Flask(__name__, template_folder='templates')
-
-# Enable CORS (Cross-Origin Resource Sharing)
 CORS(app)
 
-# --- Configuration & Model Loading ---
-MODEL_FILENAME = 'loan_model.joblib'
-SCALER_FILENAME = 'scaler.joblib'
-MODEL = None
-SCALER = None
+# --- DATABASE CONFIGURATION (LOCAL + CLOUD) ---
+# 1. Look for Render's environment variable first
+# 2. If not found, fall back to your local PostgreSQL credentials
+DB_URL = os.environ.get('DATABASE_URL')
 
-# Features must be in the exact order the model was trained on
-MODEL_FEATURES = ['Credit_Score', 'ApplicantIncome', 'LoanAmount', 'Gender']
+# Fix for Render: SQLAlchemy requires 'postgresql://', but Render often provides 'postgres://'
+if DB_URL and DB_URL.startswith("postgres://"):
+    DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
 
-def load_ml_objects():
-    """Loads the trained model and scaler into memory once."""
-    global MODEL, SCALER
-    try:
-        if os.path.exists(MODEL_FILENAME) and os.path.exists(SCALER_FILENAME):
-            MODEL = load(MODEL_FILENAME)
-            SCALER = load(SCALER_FILENAME)
-            print(f"--- SUCCESS: ML Model and Scaler loaded ---")
-        else:
-            print(f"--- ERROR: Model files missing. Run 'train_model.py' first ---")
-    except Exception as e:
-        print(f"--- CRITICAL ERROR: Could not load ML objects: {e} ---")
+# LOCAL FALLBACK: Replace 'admin123' with your actual local password for testing
+LOCAL_DB = 'postgresql://postgres:admin123@localhost:5432/loan_db'
 
-# Load model on startup
-with app.app_context():
-    load_ml_objects()
+app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL or LOCAL_DB
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# --- Internal Prediction Logic ---
+db = SQLAlchemy(app)
 
-def preprocess_and_predict(data):
-    """Prepares raw input data and runs it through the ML model."""
-    if MODEL is None or SCALER is None:
-        return "Model not initialized", 0.0
 
-    try:
-        # 1. Convert input to DataFrame
-        input_df = pd.DataFrame([data], columns=MODEL_FEATURES)
+# --- DATABASE MODEL ---
+class PredictionRecord(db.Model):
+    __tablename__ = 'loan_history'
+    id = db.Column(db.Integer, primary_key=True)
+    age = db.Column(db.Integer)
+    income = db.Column(db.Float)
+    loan_amount = db.Column(db.Float)
+    credit_score = db.Column(db.Integer)
+    dti = db.Column(db.Float)
+    prediction = db.Column(db.String(50))
+    confidence = db.Column(db.Float)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-        # 2. Preprocessing: Encode Gender (Male=1, Female=0)
-        # This MUST match the encoding used in train_model.py
-        input_df['Gender'] = input_df['Gender'].apply(lambda x: 1 if str(x).lower() == 'male' else 0)
 
-        # 3. Preprocessing: Scale numerical features
-        numerical_cols = ['Credit_Score', 'ApplicantIncome', 'LoanAmount']
-        scaled_values = SCALER.transform(input_df[numerical_cols])
+# --- LOAD ML COMPONENTS ---
+# We wrap this in a try-except for the cloud build process
+try:
+    MODEL = load('loan_model.joblib')
+    SCALER = load('scaler.joblib')
+    COLUMNS = load('model_columns.joblib')
+    print("AI Model Components Loaded Successfully.")
+except Exception as e:
+    print(f"Warning: Could not load model files: {e}")
 
-        # 4. Reconstruct feature array [ScaledNumerical, EncodedGender]
-        final_features = np.concatenate((scaled_values, input_df[['Gender']].values), axis=1)
 
-        # 5. Execute Prediction
-        prediction = MODEL.predict(final_features)[0]
-        prediction_proba = MODEL.predict_proba(final_features)[0]
-
-        # Map 1 to Approved, 0 to Rejected
-        result = "Approved" if prediction == 1 else "Rejected"
-        confidence = round(prediction_proba[prediction] * 100, 2)
-
-        return result, confidence
-
-    except Exception as e:
-        print(f"Prediction error: {e}")
-        return str(e), 0.0
-
-# --- API Routes ---
+# --- ROUTES ---
 
 @app.route('/')
 def home():
-    """Serves the web interface from templates/index.html."""
-    try:
-        return render_template('index.html')
-    except Exception:
-        # Fallback if index.html is missing
-        return jsonify({
-            "status": "Online",
-            "message": "API is running, but index.html was not found in the templates folder.",
-            "endpoint": "/predict (POST)"
-        })
+    return render_template('index.html')
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """Endpoint to receive loan details and return a prediction."""
-    if MODEL is None:
-        return jsonify({"status": "error", "message": "Model not loaded on server."}), 503
-
     try:
-        raw_data = request.get_json()
+        data = request.get_json()
 
-        # Extract and format incoming JSON
-        processed_input = {
-            'Credit_Score': int(raw_data.get('credit_score', 0)),
-            'ApplicantIncome': int(raw_data.get('income', 0)),
-            'LoanAmount': int(raw_data.get('loan_amount', 0)),
-            'Gender': raw_data.get('gender', 'Male')
-        }
+        # 1. Prepare Input Data
+        input_df = pd.DataFrame([{
+            'age': int(data.get('age', 0)),
+            'years_employed': float(data.get('years_employed', 0)),
+            'annual_income': int(data.get('income', 0)),
+            'credit_score': int(data.get('credit_score', 0)),
+            'current_debt': int(data.get('current_debt', 0)),
+            'loan_amount': int(data.get('loan_amount', 0)),
+            'debt_to_income_ratio': float(data.get('dti', 0)),
+            'occupation_status': data.get('occupation', 'Other'),
+            'loan_intent': data.get('intent', 'Personal')
+        }])
 
-        result, confidence = preprocess_and_predict(processed_input)
+        # 2. Encode and Align
+        input_encoded = pd.get_dummies(input_df)
+        input_final = input_encoded.reindex(columns=COLUMNS, fill_value=0)
 
-        if result in ["Approved", "Rejected"]:
-            return jsonify({
-                "status": "success",
-                "prediction": result,
-                "confidence": confidence
-            })
-        else:
-            return jsonify({"status": "error", "message": result}), 400
+        # 3. Scale
+        num_cols = ['age', 'years_employed', 'annual_income', 'credit_score',
+                    'current_debt', 'loan_amount', 'debt_to_income_ratio']
+        input_final[num_cols] = SCALER.transform(input_final[num_cols])
+
+        # 4. Predict
+        pred_idx = MODEL.predict(input_final)[0]
+        status = "Eligible" if pred_idx == 1 else "Not Eligible"
+
+        # Convert np.float64 to standard Python float for Postgres compatibility
+        conf_raw = np.max(MODEL.predict_proba(input_final)) * 100
+        conf = float(round(conf_raw, 2))
+
+        # 5. Save to Database
+        try:
+            new_record = PredictionRecord(
+                age=int(data.get('age', 0)),
+                income=float(data.get('income', 0)),
+                loan_amount=float(data.get('loan_amount', 0)),
+                credit_score=int(data.get('credit_score', 0)),
+                dti=float(data.get('dti', 0)),
+                prediction=status,
+                confidence=conf
+            )
+            db.session.add(new_record)
+            db.session.commit()
+        except Exception as db_err:
+            db.session.rollback()
+            print(f"Database Logging Error: {db_err}")
+
+        return jsonify({"status": "success", "prediction": status, "confidence": conf})
 
     except Exception as e:
-        return jsonify({"status": "error", "message": f"Server error: {str(e)}"}), 500
+        return jsonify({"status": "error", "message": str(e)}), 400
 
+
+@app.route('/admin')
+def admin_dashboard():
+    try:
+        records = PredictionRecord.query.order_by(PredictionRecord.created_at.desc()).limit(50).all()
+        return render_template('admin.html', records=records)
+    except Exception as e:
+        return f"Database error: {e}", 500
+
+
+# --- APP STARTUP ---
 if __name__ == '__main__':
-    # Running on default port 5000
-    app.run(debug=True, port=5000)
+    with app.app_context():
+        db.create_all()
+
+    # Use the port assigned by Render, default to 5000 for local
+    port = int(os.environ.get("PORT", 5000))
+    # host='0.0.0.0' is required for cloud accessibility
+    app.run(host='0.0.0.0', port=port)

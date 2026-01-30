@@ -4,3 +4,5 @@ scikit-learn
 joblib
 flask
 flask-cors
+flask-sqlalchemy
+psycopg2-binary
