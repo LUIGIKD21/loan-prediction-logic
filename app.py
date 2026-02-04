@@ -11,15 +11,13 @@ app = Flask(__name__, template_folder='templates')
 CORS(app)
 
 # --- DATABASE CONFIGURATION (LOCAL + CLOUD) ---
-# 1. Look for Render's environment variable first
-# 2. If not found, fall back to your local PostgreSQL credentials
 DB_URL = os.environ.get('DATABASE_URL')
 
-# Fix for Render: SQLAlchemy requires 'postgresql://', but Render often provides 'postgres://'
+# Fix for Render: SQLAlchemy requires 'postgresql://'
 if DB_URL and DB_URL.startswith("postgres://"):
     DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
 
-# LOCAL FALLBACK: Replace 'admin123' with your actual local password for testing
+# LOCAL FALLBACK: Replace 'admin123' with your actual local password
 LOCAL_DB = 'postgresql://postgres:admin123@localhost:5432/loan_db'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL or LOCAL_DB
@@ -42,8 +40,16 @@ class PredictionRecord(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+# --- INITIALIZE DATABASE TABLES ---
+# This runs when Gunicorn loads the app, ensuring tables exist on Render
+with app.app_context():
+    try:
+        db.create_all()
+        print("Successfully connected to Database and verified tables.")
+    except Exception as e:
+        print(f"Database initialization error: {e}")
+
 # --- LOAD ML COMPONENTS ---
-# We wrap this in a try-except for the cloud build process
 try:
     MODEL = load('loan_model.joblib')
     SCALER = load('scaler.joblib')
@@ -91,26 +97,22 @@ def predict():
         pred_idx = MODEL.predict(input_final)[0]
         status = "Eligible" if pred_idx == 1 else "Not Eligible"
 
-        # Convert np.float64 to standard Python float for Postgres compatibility
+        # Convert np.float64 to native Python float
         conf_raw = np.max(MODEL.predict_proba(input_final)) * 100
         conf = float(round(conf_raw, 2))
 
         # 5. Save to Database
-        try:
-            new_record = PredictionRecord(
-                age=int(data.get('age', 0)),
-                income=float(data.get('income', 0)),
-                loan_amount=float(data.get('loan_amount', 0)),
-                credit_score=int(data.get('credit_score', 0)),
-                dti=float(data.get('dti', 0)),
-                prediction=status,
-                confidence=conf
-            )
-            db.session.add(new_record)
-            db.session.commit()
-        except Exception as db_err:
-            db.session.rollback()
-            print(f"Database Logging Error: {db_err}")
+        new_record = PredictionRecord(
+            age=int(data.get('age', 0)),
+            income=float(data.get('income', 0)),
+            loan_amount=float(data.get('loan_amount', 0)),
+            credit_score=int(data.get('credit_score', 0)),
+            dti=float(data.get('dti', 0)),
+            prediction=status,
+            confidence=conf
+        )
+        db.session.add(new_record)
+        db.session.commit()
 
         return jsonify({"status": "success", "prediction": status, "confidence": conf})
 
@@ -127,12 +129,7 @@ def admin_dashboard():
         return f"Database error: {e}", 500
 
 
-# --- APP STARTUP ---
+# --- LOCAL RUN (Ignored by Gunicorn) ---
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-
-    # Use the port assigned by Render, default to 5000 for local
     port = int(os.environ.get("PORT", 5000))
-    # host='0.0.0.0' is required for cloud accessibility
     app.run(host='0.0.0.0', port=port)
