@@ -5,44 +5,108 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Risk Terminal | Summer Associate Project</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap"
+          rel="stylesheet">
+    <style>
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #475569; /* slate-600 */
+        }
+    </style>
 </head>
 <body class="bg-slate-50 min-h-screen p-8 font-['Plus_Jakarta_Sans']">
 <div class="max-w-4xl mx-auto space-y-6">
-    <header class="flex justify-between items-center border-b pb-4">
-        <h1 class="text-2xl font-bold text-slate-900">AI Eligibility Engine</h1>
-        <a href="/admin" class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition">View Audit Logs →</a>
+    <header class="flex justify-between items-center border-b pb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 tracking-tight">AI Eligibility Engine</h1>
+            <p class="text-slate-500 text-sm">Automated Risk Assessment Terminal</p>
+        </div>
+        <a href="/admin"
+           class="text-sm font-semibold text-blue-600 hover:text-blue-800 transition bg-blue-50 px-4 py-2 rounded-full">
+            View Audit Logs →
+        </a>
     </header>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div class="md:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-            <form id="loanForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <input type="number" id="age" placeholder="Age" class="p-3 bg-slate-50 border rounded-xl outline-none" required>
-                <input type="number" id="income" placeholder="Annual Income ($)" class="p-3 bg-slate-50 border rounded-xl outline-none" required>
-                <input type="number" id="loan_amount" placeholder="Loan Amount ($)" class="p-3 bg-blue-50 border border-blue-100 rounded-xl outline-none font-bold" required>
-                <input type="number" id="credit_score" placeholder="Credit Score (300-850)" class="p-3 bg-slate-50 border rounded-xl outline-none" required>
-                <input type="number" id="current_debt" placeholder="Current Debt ($)" class="p-3 bg-slate-50 border rounded-xl outline-none" required>
-                <input type="number" step="0.1" id="years_employed" placeholder="Years Employed" class="p-3 bg-slate-50 border rounded-xl outline-none" required>
-                <select id="occupation" class="p-3 bg-slate-50 border rounded-xl outline-none md:col-span-2">
-                    <option value="Employed">Employed</option>
-                    <option value="Student">Student</option>
-                    <option value="Unemployed">Unemployed</option>
-                </select>
-                <button type="submit" id="submitBtn" class="md:col-span-2 bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all">
+            <form id="loanForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div class="input-group">
+                    <label for="age">Applicant Age</label>
+                    <input type="number" id="age" placeholder="e.g. 25"
+                           class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition"
+                           required>
+                </div>
+
+                <div class="input-group">
+                    <label for="income">Annual Income ($)</label>
+                    <input type="number" id="income" placeholder="e.g. 65000"
+                           class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition"
+                           required>
+                </div>
+
+                <div class="input-group">
+                    <label for="loan_amount" class="text-blue-700">Requested Loan Amount ($)</label>
+                    <input type="number" id="loan_amount" placeholder="e.g. 15000"
+                           class="w-full p-3 bg-blue-50 border border-blue-200 rounded-xl outline-none font-bold text-blue-900 focus:ring-2 focus:ring-blue-500/20 transition"
+                           required>
+                </div>
+
+                <div class="input-group">
+                    <label for="credit_score">Credit Score (300-850)</label>
+                    <input type="number" id="credit_score" placeholder="e.g. 720"
+                           class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition"
+                           required>
+                </div>
+
+                <div class="input-group">
+                    <label for="current_debt">Current Debt ($)</label>
+                    <input type="number" id="current_debt" placeholder="Total existing balance"
+                           class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition"
+                           required>
+                </div>
+
+                <div class="input-group">
+                    <label for="years_employed">Years Employed</label>
+                    <input type="number" step="0.1" id="years_employed" placeholder="e.g. 4.5"
+                           class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition"
+                           required>
+                </div>
+
+                <div class="input-group md:col-span-2">
+                    <label for="occupation">Employment Status</label>
+                    <select id="occupation"
+                            class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition">
+                        <option value="Employed">Employed</option>
+                        <option value="Student">Student</option>
+                        <option value="Unemployed">Unemployed</option>
+                    </select>
+                </div>
+
+                <button type="submit" id="submitBtn"
+                        class="md:col-span-2 bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-black transition-all shadow-lg hover:shadow-xl active:scale-[0.98]">
                     Run Eligibility Check
                 </button>
             </form>
         </div>
 
         <div id="resultsBox" class="hidden">
-            <div id="resultCard" class="h-full rounded-3xl p-8 border flex flex-col items-center justify-center text-center space-y-4 shadow-xl">
-                <p class="text-xs font-bold uppercase opacity-60">System Decision</p>
-                <h2 id="resultStatus" class="text-3xl font-bold"></h2>
-                <div class="w-full bg-white/30 rounded-full h-2">
-                    <div id="confBar" class="h-full rounded-full transition-all duration-1000 bg-white"></div>
+            <div id="resultCard"
+                 class="h-full rounded-3xl p-8 border flex flex-col items-center justify-center text-center space-y-4 shadow-xl transition-all duration-500">
+                <p class="text-xs font-bold uppercase tracking-widest opacity-70">System Decision</p>
+                <h2 id="resultStatus" class="text-4xl font-extrabold tracking-tight"></h2>
+                <div class="w-full bg-white/30 rounded-full h-2 mt-4">
+                    <div id="confBar" class="h-full rounded-full transition-all duration-1000 bg-white"
+                         style="width: 0%"></div>
                 </div>
-                <p class="text-sm font-medium">Confidence: <span id="confText"></span></p>
-                <p class="text-[10px] opacity-70 italic">Transaction saved to PostgreSQL</p>
+                <p class="text-sm font-semibold">Model Confidence: <span id="confText">0%</span></p>
+                <div class="pt-4 border-t border-white/20 w-full">
+                    <p class="text-[10px] opacity-80 italic uppercase tracking-tighter">Verified & Logged to
+                        PostgreSQL</p>
+                </div>
             </div>
         </div>
     </div>
@@ -53,7 +117,7 @@
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.innerText = "Analyzing Risk...";
+        btn.innerText = "Processing Transaction...";
 
         const income = parseFloat(document.getElementById('income').value) || 1;
         const currentDebt = parseFloat(document.getElementById('current_debt').value) || 0;
@@ -89,19 +153,16 @@
                 document.getElementById('resultStatus').innerText = data.prediction.toUpperCase();
 
                 card.className = isEligible
-                        ? 'h-full rounded-3xl p-8 border bg-emerald-500 text-white shadow-xl'
-                        : 'h-full rounded-3xl p-8 border bg-rose-500 text-white shadow-xl';
+                        ? 'h-full rounded-3xl p-8 border bg-emerald-600 text-white shadow-xl flex flex-col items-center justify-center text-center space-y-4'
+                        : 'h-full rounded-3xl p-8 border bg-rose-600 text-white shadow-xl flex flex-col items-center justify-center text-center space-y-4';
 
                 document.getElementById('confText').innerText = data.confidence + '%';
-                // Trigger animation
                 setTimeout(() => {
                     document.getElementById('confBar').style.width = data.confidence + '%';
                 }, 100);
-            } else {
-                alert("Server Error: " + data.message);
             }
         } catch (err) {
-            alert("Connection Error: Is the app.py server running?");
+            alert("Connection Error. Ensure Flask is running.");
         } finally {
             btn.disabled = false;
             btn.innerText = "Run Eligibility Check";
