@@ -6,8 +6,6 @@ from sklearn.ensemble import RandomForestClassifier
 from joblib import dump
 from sqlalchemy import create_engine
 
-# --- SETTINGS & CONFIGURATION ---
-# Replace 'your_password' with your actual PostgreSQL password
 DB_PASSWORD = 'admin123'
 DB_URL = f'postgresql://postgres:{DB_PASSWORD}@localhost:5432/loan_db'
 
@@ -29,7 +27,6 @@ def train_and_save_model():
         return
 
     # 2. Seed to PostgreSQL (Data Governance Step)
-    # This proves you can move data between files and enterprise databases
     try:
         engine = create_engine(DB_URL)
         df.to_sql('raw_training_data', engine, if_exists='replace', index=False)
@@ -46,7 +43,6 @@ def train_and_save_model():
     dump(list(X.columns), 'model_columns.joblib')
 
     # 4. Preprocessing: Scaling Numbers
-    # Ensures 'Income' (large numbers) doesn't drown out 'DTI' (small numbers)
     scaler = StandardScaler()
     num_cols = ['age', 'years_employed', 'annual_income', 'credit_score',
                 'current_debt', 'loan_amount', 'debt_to_income_ratio']

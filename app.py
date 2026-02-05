@@ -17,7 +17,7 @@ DB_URL = os.environ.get('DATABASE_URL')
 if DB_URL and DB_URL.startswith("postgres://"):
     DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
 
-# LOCAL FALLBACK: Replace 'admin123' with your actual local password
+
 LOCAL_DB = 'postgresql://postgres:admin123@localhost:5432/loan_db'
 
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL or LOCAL_DB
